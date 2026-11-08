@@ -37,8 +37,20 @@ jobs:
 
       - name: Install SDK components
         run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+          yes | sdkmanager --licenses > /dev/null || true
+          for pkg in "platforms;android-36" "build-tools;36.0.0" "cmake;3.22.1" "ndk;27.2.12479018"; do
+            for attempt in 1 2 3; do
+              if sdkmanager --install "$pkg" > /dev/null; then
+                echo "Installed $pkg"
+                break
+              fi
+              echo "Attempt $attempt failed for $pkg"
+              if [ "$attempt" -eq 3 ]; then
+                exit 1
+              fi
+              sleep 10
+            done
+          done
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
